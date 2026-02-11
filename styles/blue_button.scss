@@ -1,0 +1,15 @@
+.bw-emoji {
+    filter:
+        grayscale(100%) sepia(100%) hue-rotate(250deg) saturate(600%) brightness(0.9);
+}
+
+
+.bw-emoji:hover {
+    filter: none;
+}
+
+// svg {
+//     margin-right: 8px;
+//     color: #7c3aed;
+//     /* tím */
+// }

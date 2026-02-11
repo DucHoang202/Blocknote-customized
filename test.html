@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="./dist/assets/style-Cxix3tfr.css" />
+    <script type="module" src="./dist/assets/editor.js">
+    </script>
+    <script>
+        window.__EDITOR_DATA__ = {
+            articleId: 123,
+            content: `<section>
+<h1>Pickleball tại Việt Nam: Từ trào lưu đến môn thể thao bền vững</h1>
+<div class="sapo">
+Pickleball đang nổi lên mạnh mẽ tại Việt Nam, nhưng để phát triển bền vững cần giải quyết các vấn đề về cơ sở hạ tầng và đào tạo hệ thống.
+</div>
+
+<h2>Thực trạng phát triển chưa đồng bộ</h2>
+<p>Pickleball hiện gặp phải hai vấn đề chính tại Việt Nam. Thứ nhất, sân thi đấu còn hạn chế và phân bố không đều giữa các vùng miền. Thứ hai, chất lượng hướng dẫn viên chưa được chuẩn hóa, dẫn đến việc người chơi mới học sai kỹ thuật cơ bản.</p>
+
+<h2>Giải pháp phát triển bền vững</h2>
+<p>Để khắc phục, cần <strong>tiêu chuẩn hóa cơ sở vật chất</strong> thông qua quy định kỹ thuật sân thi đấu và <strong>xây dựng chương trình đào tạo</strong> huấn luyện viên theo chuẩn quốc tế. Đồng thời, tổ chức các giải đấu định kỳ để tạo động lực phát triển cho cộng đồng người chơi.</p>
+
+<p>Nếu thực hiện đồng bộ các giải pháp này, pickleball có thể trở thành môn thể thao phổ biến và bền vững tại Việt Nam.</p>
+</section>` }
+
+
+        function saveToCMS(data) {
+            console.log("HTML gửi lên server:", data.content);
+            console.log("Stats gửi lên server:", data.stats);
+
+            // fetch("/api/save-article", {
+            //     method: "POST",
+            //     headers: { "Content-Type": "application/json" },
+            //     body: JSON.stringify({
+            //         id: data.articleId,
+            //         content: data.html, // lưu html vào DB
+            //     }),
+            // });
+        }
+
+    </script>
+</head>
+
+<body>
+    <div id="editor-root"></div>
+
+</body>
+
+</html>

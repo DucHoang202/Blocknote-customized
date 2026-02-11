@@ -1,0 +1,132 @@
+.ai-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 360px;
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+    border: 1px solid #e5e7eb;
+    z-index: 999999;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+
+    animation: aiFadeIn 0.18s ease-out;
+
+    .ai-header {
+        padding: 14px 16px;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 14px;
+        font-weight: 600;
+        color: #111827;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+.ai-body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background-color: white;
+}
+
+.ai-btn {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s ease;
+
+    &:hover {
+        background: #eef2ff;
+        border-color: #6366f1;
+        transform: translateY(-1px);
+    }
+
+    &:active {
+        transform: scale(0.98);
+    }
+}
+
+.ai-close {
+    cursor: pointer;
+    font-size: 12px;
+    color: #6b7280;
+
+    &:hover {
+        color: #111827;
+    }
+}
+
+
+@keyframes aiFadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -48%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
+.mantine-Menu-dropdown {
+    background-color: white;
+}
+
+/* NotionMenu.module.scss */
+
+.notionButton {
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #37352f;
+    background: transparent;
+    transition: background 0.15s ease;
+
+    &:hover {
+        background: #f1f1ef;
+    }
+}
+
+.notionDropdown {
+    border: 1px solid #e9e9e7;
+    border-radius: 8px;
+    padding: 6px;
+    box-shadow:
+        0 8px 16px rgba(15, 15, 15, 0.08),
+        0 2px 4px rgba(15, 15, 15, 0.06);
+    background: #ffffff;
+}
+
+.notionItem {
+    height: 30px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #37352f;
+    padding: 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    &:hover {
+        background: #f1f1ef;
+    }
+}
+
+.notionDivider {
+    margin: 6px 4px;
+    border-top: 1px solid #efefed;
+}
+
+.toolbar-ai {
+    margin-top: 7px;
+}

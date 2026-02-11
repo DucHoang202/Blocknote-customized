@@ -1,0 +1,297 @@
+/* NotionMenu.module.scss */
+
+.notionButton {
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #37352f;
+    background: transparent;
+    transition: background 0.15s ease;
+
+    &:hover {
+        background: #f1f1ef;
+    }
+}
+
+.notionDropdown {
+    border: 1px solid #e9e9e7;
+    border-radius: 8px;
+    padding: 6px;
+    box-shadow:
+        0 8px 16px rgba(15, 15, 15, 0.08),
+        0 2px 4px rgba(15, 15, 15, 0.06);
+    background: #ffffff;
+}
+
+.notionItem {
+    height: 30px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #37352f;
+    padding: 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    &:hover {
+        background: #f1f1ef;
+    }
+}
+
+.notionDivider {
+    margin: 6px 4px;
+    border-top: 1px solid #efefed;
+}
+
+.aiOverlay {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90vw;
+    max-width: 1000px;
+    z-index: 9999;
+}
+
+.aiBigInput input {
+    height: 48px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: 1px solid #e9e9e7;
+    box-shadow: 0 12px 24px rgba(15, 15, 15, 0.12);
+}
+
+.aiFullBar {
+    position: fixed;
+    top: 90px; // chỉnh theo editor của bạn
+    left: 0;
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.aiInput {
+    width: 90%;
+    max-width: 1100px;
+
+    input {
+        height: 48px;
+        font-size: 16px;
+        border-radius: 12px;
+        border: 1px solid #e9e9e7;
+        box-shadow: 0 12px 24px rgba(15, 15, 15, 0.12);
+    }
+}
+
+.ai-dropdown {
+    padding: 8px;
+    width: 260px;
+}
+
+.ai-dropdown .mantine-Menu-item {
+    border-radius: 8px;
+    margin: 4px 0;
+    font-size: 14px;
+    transition: background 0.15s ease;
+}
+
+.ai-dropdown .mantine-Menu-item:hover {
+    background: #f1f3f5;
+}
+
+.ai-dropdown .mantine-Menu-divider {
+    margin: 8px 0;
+}
+
+.aiFullBar {
+    padding: 8px;
+    border-bottom: 1px solid #e9ecef;
+    margin-bottom: 6px;
+}
+
+.aiInput input {
+    border-radius: 10px;
+    height: 36px;
+    font-size: 14px;
+}
+
+.aiMenuDropdown {
+    padding: 0 !important;
+    width: 280px;
+    border-radius: 14px;
+    overflow: hidden;
+
+    box-shadow:
+        0 12px 28px rgba(0, 0, 0, 0.12),
+        0 2px 4px rgba(0, 0, 0, 0.08);
+
+    animation: aiDropdownIn 120ms ease;
+}
+
+/* Animation giống Notion */
+@keyframes aiDropdownIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Sticky header chứa input */
+.aiStickyHeader {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: white;
+    padding: 10px;
+    border-bottom: 1px solid #ececec;
+}
+
+/* Input style */
+.aiInput input {
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid #e6e6e6;
+    font-size: 14px;
+    padding-left: 12px;
+    transition: all 0.15s ease;
+}
+
+.aiInput input:focus {
+    border-color: #c7c7c7;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.04);
+}
+
+/* List scroll */
+.aiMenuList {
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+/* Scrollbar giống Notion */
+.aiMenuList::-webkit-scrollbar {
+    width: 6px;
+}
+
+.aiMenuList::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+}
+
+/* Item style */
+.aiMenuList .mantine-Menu-item {
+    border-radius: 10px;
+    height: 36px;
+    font-size: 14px;
+    padding-left: 12px;
+    transition: background 0.12s ease, transform 0.06s ease;
+}
+
+.aiMenuList .mantine-Menu-item:hover {
+    background: #f5f5f5;
+    transform: translateX(2px);
+}
+
+/* Divider spacing */
+.aiMenuList .mantine-Menu-divider {
+    margin: 8px 0;
+}
+
+.aiMenuDropdown {
+    backdrop-filter: blur(6px);
+}
+
+// Paste vào file Notion.module.scss của bạn
+
+.aiConfirmBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 14px;
+    margin: 6px 0;
+    border-radius: 8px;
+    background: #f0f4ff;
+    border: 1px solid #c7d7fd;
+    box-shadow: 0 2px 8px rgba(99, 120, 255, 0.12);
+    animation: aiBarSlideIn 0.18s ease;
+
+    @keyframes aiBarSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-6px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
+
+.aiConfirmLabel {
+    font-size: 13px;
+    color: #3a4a8a;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.aiConfirmActions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.aiConfirmBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background 0.12s, transform 0.1s;
+
+    kbd {
+        font-size: 11px;
+        padding: 1px 5px;
+        border-radius: 4px;
+        background: rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        font-family: inherit;
+    }
+
+    &:active {
+        transform: scale(0.97);
+    }
+}
+
+.aiConfirmAccept {
+    background: #e6f9ee;
+    color: #1a6b3c;
+    border-color: #a8e6c0;
+
+    &:hover {
+        background: #c8f0d8;
+    }
+}
+
+.aiConfirmRevert {
+    background: #fef0f0;
+    color: #8b1a1a;
+    border-color: #f5c0c0;
+
+    &:hover {
+        background: #fdd8d8;
+    }
+}
