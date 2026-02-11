@@ -29,7 +29,8 @@ function AIFloatingPanel({
     onClose: () => void;
 }) {
     const openAI = useAIState((s) => s.openAI);
-    const BASE_URL = "http://localhost:3000/ai";
+    //const BASE_URL = "http://localhost:3000/ai";
+    const BASE_URL = "https://content.kongbot.net/webhook/ai-editor";
     const [panelPos, setPanelPos] = useState<{ top: number; left: number; width: number } | null>(null);
     const [prompt, setPrompt] = useState("");
     const [preview, setPreview] = useState<string | null>(null);
@@ -37,7 +38,19 @@ function AIFloatingPanel({
 
     const panelRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const [dots, setDots] = useState("");
+    useEffect(() => {
+        if (!loading) {
+            setDots("");
+            return;
+        }
 
+        const interval = setInterval(() => {
+            setDots(prev => (prev.length >= 3 ? "" : prev + "."));
+        }, 500);
+
+        return () => clearInterval(interval);
+    }, [loading]);
     useEffect(() => {
         const pos = getSelectionRect();
         setPanelPos(pos ?? { top: window.scrollY + 120, left: 16, width: 320 });
@@ -45,7 +58,9 @@ function AIFloatingPanel({
     }, []);
 
     useEffect(() => {
+
         function onMouseDown(e: MouseEvent) {
+            if (loading) return;
             if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
                 closePanel();
             }
@@ -163,11 +178,14 @@ function AIFloatingPanel({
             }}
         >
             {/* Input row */}
-            <div style={{ padding: "6px 8px", borderBottom: "1px solid #f0f0ee", display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ padding: "0", borderBottom: "1px solid #f0f0ee", display: "flex", alignItems: "center", gap: 6, width: "100%", justifyContent: "space-between" }}>
                 <input
                     ref={inputRef}
-                    placeholder="Ask AI to write anything…"
-                    value={prompt}
+                    placeholder={
+                        loading
+                            ? `Đang suy nghĩ${dots}`
+                            : "Ask AI to write anything…"
+                    } value={prompt}
                     onChange={(e) => setPrompt(e.currentTarget.value)}
                     onKeyDown={(e) => {
                         e.stopPropagation();
@@ -175,16 +193,18 @@ function AIFloatingPanel({
                         if (e.key === "Escape") closePanel();
                     }}
                     style={{
-                        flex: 1,
-                        height: 34,
-                        padding: "0 8px",
-                        fontSize: 13,
-                        color: "#37352f",
-                        border: "1px solid #e3e3e1",
-                        borderRadius: 5,
-                        outline: "none",
+                        color: "rgb(108, 108, 107)",
+                        fontSize: "14px",
+                        height: "46px",
+                        minHeight: "30px",
+                        border: "1px solid rgb(227, 227, 225)",
+                        borderRadius: "5px",
+                        zIndex: 102,
+                        width: "calc(-54px + 100vw)",
+                        boxShadow: "0 8px 28px rgba(0,0,0,0.13)",
                         background: "white",
-                        fontFamily: "inherit",
+                        position: "absolute",
+                        paddingLeft: "12px",
                     }}
                 />
                 {loading && (
@@ -196,52 +216,59 @@ function AIFloatingPanel({
                     }} />
                 )}
             </div>
+            <div style={{
+                marginTop: 32,
+            }}>
+                {/* Preview */}
+                {preview && (
+                    <div style={{ padding: "6px 8px", borderBottom: "1px solid #f0f0ee" }}>
+                        <div style={{
+                            padding: "6px 8px",
+                            background: "#f7f6f3",
+                            borderRadius: 5,
+                            fontSize: 12,
+                            whiteSpace: "pre-wrap",
+                            maxHeight: 120,
+                            overflowY: "auto",
+                            color: "#37352f",
+                            lineHeight: 1.5,
+                        }}>
+                            {preview}
+                        </div>
+                        <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
+                            <button
+                                onMouseDown={(e) => { e.stopPropagation(); acceptPromptResult(); }}
+                                style={btnStyle("#37352f", "#fff")}
+                            >✅ Insert</button>
+                            <button
+                                onMouseDown={(e) => { e.stopPropagation(); setPreview(null); setPrompt(""); }}
+                                style={btnStyle("#f0f0ee", "#37352f")}
+                            >❌ Discard</button>
+                        </div>
+                    </div>
+                )}
 
-            {/* Preview */}
-            {preview && (
-                <div style={{ padding: "6px 8px", borderBottom: "1px solid #f0f0ee" }}>
-                    <div style={{
-                        padding: "6px 8px",
-                        background: "#f7f6f3",
-                        borderRadius: 5,
-                        fontSize: 12,
-                        whiteSpace: "pre-wrap",
-                        maxHeight: 120,
-                        overflowY: "auto",
-                        color: "#37352f",
-                        lineHeight: 1.5,
-                    }}>
-                        {preview}
-                    </div>
-                    <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
+                {/* Command list */}
+                <div style={{
+                    padding: 0,
+                    // marginTop: 32,
+                    marginLeft: 12,
+                }}>
+                    {COMMANDS.map(({ label, action }) => (
                         <button
-                            onMouseDown={(e) => { e.stopPropagation(); acceptPromptResult(); }}
-                            style={btnStyle("#37352f", "#fff")}
-                        >✅ Insert</button>
-                        <button
-                            onMouseDown={(e) => { e.stopPropagation(); setPreview(null); setPrompt(""); }}
-                            style={btnStyle("#f0f0ee", "#37352f")}
-                        >❌ Discard</button>
-                    </div>
+                            key={action}
+                            onMouseDown={(e) => { e.stopPropagation(); runAI(action); }}
+                            style={commandStyle}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f1ef")}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                        >{label}</button>
+                    ))}
                 </div>
-            )}
 
-            {/* Command list */}
-            <div style={{ padding: "4px 0" }}>
-                {COMMANDS.map(({ label, action }) => (
-                    <button
-                        key={action}
-                        onMouseDown={(e) => { e.stopPropagation(); runAI(action); }}
-                        style={commandStyle}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f1ef")}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                    >{label}</button>
-                ))}
+                {/* Spinner keyframe */}
+                < style > {`@keyframes ai-spin { to { transform: rotate(360deg); } }`}</style >
             </div>
-
-            {/* Spinner keyframe */}
-            <style>{`@keyframes ai-spin { to { transform: rotate(360deg); } }`}</style>
-        </div>,
+        </div >,
         document.body
     );
 }
@@ -301,8 +328,9 @@ const btnStyle = (bg: string, color: string): React.CSSProperties => ({
 const commandStyle: React.CSSProperties = {
     display: "block", width: "100%",
     padding: "7px 12px", textAlign: "left",
-    fontSize: 13, background: "transparent",
+    fontSize: 14, background: "transparent",
     color: "#37352f", border: "none",
-    cursor: "pointer", fontFamily: "inherit",
+    cursor: "pointer", fontFamily: "ui-sans-serif",
     transition: "background 0.1s",
+
 };

@@ -25,7 +25,8 @@ function getSelectionRect(): { top: number; left: number; width: number } | null
 }
 
 export function BlueButton() {
-    const BASE_URL = "http://localhost:3000/ai";
+    //const BASE_URL = "http://localhost:3000/ai";
+    const BASE_URL = "https://content.kongbot.net/webhook/ai-editor";
     // ── AI global state ──────────────────────────────────────────────────────
     const setPending = useAIState((s) => s.setPending);
     const openAI = useAIState((s) => s.openAI);
@@ -44,7 +45,19 @@ export function BlueButton() {
 
     const editor = useBlockNoteEditor();
     const Components = useComponentsContext()!;
+    const [dots, setDots] = useState("");
+    useEffect(() => {
+        if (!loading) {
+            setDots("");
+            return;
+        }
 
+        const interval = setInterval(() => {
+            setDots(prev => (prev.length >= 3 ? "" : prev + "."));
+        }, 500);
+
+        return () => clearInterval(interval);
+    }, [loading]);
     const SparklesIcon = () => (
         <svg
             width="16"
@@ -98,6 +111,7 @@ export function BlueButton() {
     // ── Click-outside to close ────────────────────────────────────────────────
     useEffect(() => {
         function onMouseDown(e: MouseEvent) {
+            if (loading) return;
             if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
                 closePanel();
             }
@@ -306,8 +320,11 @@ export function BlueButton() {
                     <div style={{ borderBottom: "1px solid #f0f0ee" }}>
                         <TextInput
                             ref={inputRef}
-                            placeholder="Ask AI to write anything…"
-                            value={prompt}
+                            placeholder={
+                                loading
+                                    ? `Đang suy nghĩ${dots}`
+                                    : "Ask AI to write anything…"
+                            } value={prompt}
                             onChange={(e) => setPrompt(e.currentTarget.value)}
                             onKeyDown={(e) => {
                                 e.stopPropagation();
@@ -326,7 +343,7 @@ export function BlueButton() {
                                     borderRadius: 5,
                                     zIndex: 102,
                                     width: "calc(100vw - 54px)",
-                                    boxShadow: "var(--c-shaMD)",
+                                    boxShadow: "0 8px 28px rgba(0,0,0,0.13)",
                                     background: "white",
                                 },
                             }}
@@ -428,8 +445,8 @@ const btnStyle = (bg: string, color: string): React.CSSProperties => ({
 const commandStyle: React.CSSProperties = {
     display: "block", width: "100%",
     padding: "6px 12px", textAlign: "left",
-    fontSize: 13, background: "transparent",
+    fontSize: 14, background: "transparent",
     color: "#37352f", border: "none",
-    cursor: "pointer", fontFamily: "inherit",
+    cursor: "pointer", fontFamily: "ui-sans-serif",
     transition: "background 0.1s",
 };
