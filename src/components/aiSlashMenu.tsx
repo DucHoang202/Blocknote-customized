@@ -108,6 +108,7 @@ function AIFloatingPanel({ editor, onClose }) {
     useEffect(() => {
         if (!loading) return;
         document.body.style.overflow = "hidden";
+        setPrompt("");
         const block = (e) => { e.preventDefault(); e.stopPropagation(); };
         window.addEventListener("keydown", block, true);
         return () => { document.body.style.overflow = ""; window.removeEventListener("keydown", block, true); };

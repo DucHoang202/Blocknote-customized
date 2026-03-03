@@ -423,7 +423,7 @@ body {
 
 .mantine-Input-input {
     border: none;
-    height: 30px;
+
 }
 
 .mantine-Input-wrapper {
@@ -442,9 +442,10 @@ body {
     position: relative;
 }
 
-.textarea {
+.textarea-sub {
     position: relative;
     background: transparent;
+
 }
 
 .fake-placeholder {
@@ -527,4 +528,12 @@ body {
 
 .mantine-Tooltip-arrow {
     z-index: 10005 !important;
+}
+
+[data-content-type=heading][data-level="2"] {
+    --level: 26px;
+}
+
+[data-content-type=heading] {
+    --level: 32px;
 }

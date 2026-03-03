@@ -234,7 +234,7 @@ export function BlueButton() {
     useEffect(() => {
         if (loading) {
             //, document.body.style.overflow = "hidden";
-
+            setPrompt("");
             const blockKeys = (e: KeyboardEvent) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -317,7 +317,7 @@ export function BlueButton() {
                                 )}
                                 <Textarea
                                     disabled={loading}
-                                    className="textarea"
+                                    className="textarea-sub"
                                     ref={inputRef}
                                     placeholder={loading ? "" : "Hỏi AI bất kỳ điều gì..."}
                                     autosize
