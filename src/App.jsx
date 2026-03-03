@@ -17,8 +17,8 @@ import { HiOutlineGlobeAlt } from "react-icons/hi";
 import {
   insertOrUpdateBlockForSlashMenu,
 } from "@blocknote/core/extensions";
-import { aiSlashItem } from "./components/aiSlashItem"; //  function thường, không phải hook
-
+// import { aiSlashItem } from "./components/aiSlashItem"; //  function thường, không phải hook
+import { aiSlashItem } from "./components/aiSlashMenu";
 import {
   AIExtension,
   AIMenuController,
@@ -355,9 +355,14 @@ export default function App({ articleId, content }) {
     });
     return () => unsubscribe();
   }, [editor, articleId]);
-
+  const getCustomSlashMenuItems = (
+    editor,
+  ) => [
+      ...getDefaultReactSlashMenuItems(editor),
+      aiSlashItem(editor),
+    ];
   return (
-    <BlockNoteView editor={editor} formattingToolbar={false} suggestionMenu={false}>
+    <BlockNoteView editor={editor} formattingToolbar={false} suggestionMenu={false} slashMenu={false}>
       <FormattingToolbarController
         formattingToolbar={() => (
           <FormattingToolbar>
@@ -387,10 +392,14 @@ export default function App({ articleId, content }) {
         getItems={async (query) =>
           filterSuggestionItems(
             [...getDefaultReactSlashMenuItems(editor), aiSlashItem(editor)],
+
             query
           )
         }
+
       />
+
     </BlockNoteView>
+
   );
 }

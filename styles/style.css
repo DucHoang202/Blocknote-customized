@@ -1,0 +1,530 @@
+/* Thin */
+@font-face {
+    font-family: "InterDisplay";
+    src: url("./fonts/InterDisplay-Thin.ttf") format("truetype");
+    font-weight: 100;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "InterDisplay";
+    src: url("./fonts/InterDisplay-ThinItalic.ttf") format("truetype");
+    font-weight: 100;
+    font-style: italic;
+}
+
+/* ExtraLight */
+@font-face {
+    font-family: "InterDisplay";
+    src: url("./fonts/InterDisplay-ExtraLight.ttf") format("truetype");
+    font-weight: 200;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "InterDisplay";
+    src: url("./fonts/InterDisplay-ExtraLightItalic.ttf") format("truetype");
+    font-weight: 200;
+    font-style: italic;
+}
+
+/* Light */
+@font-face {
+    font-family: "InterDisplay";
+    src: url("./fonts/InterDisplay-Light.ttf") format("truetype");
+    font-weight: 300;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "InterDisplay";
+    src: url("./fonts/InterDisplay-LightItalic.ttf") format("truetype");
+    font-weight: 300;
+    font-style: italic;
+}
+
+/* Regular */
+@font-face {
+    font-family: "InterDisplay";
+    src: url("./fonts/InterDisplay-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "InterDisplay";
+    src: url("./fonts/InterDisplay-Italic.ttf") format("truetype");
+    font-weight: 400;
+    font-style: italic;
+}
+
+/* Medium */
+@font-face {
+    font-family: "InterDisplay";
+    src: url("./fonts/InterDisplay-Medium.ttf") format("truetype");
+    font-weight: 500;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "InterDisplay";
+    src: url("./fonts/InterDisplay-MediumItalic.ttf") format("truetype");
+    font-weight: 500;
+    font-style: italic;
+}
+
+/* SemiBold */
+@font-face {
+    font-family: "InterDisplay";
+    src: url("./fonts/InterDisplay-SemiBold.ttf") format("truetype");
+    font-weight: 600;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "InterDisplay";
+    src: url("./fonts/InterDisplay-SemiBoldItalic.ttf") format("truetype");
+    font-weight: 600;
+    font-style: italic;
+}
+
+/* Bold */
+@font-face {
+    font-family: "InterDisplay";
+    src: url("./fonts/InterDisplay-Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "InterDisplay";
+    src: url("./fonts/InterDisplay-BoldItalic.ttf") format("truetype");
+    font-weight: 700;
+    font-style: italic;
+}
+
+/* ExtraBold */
+@font-face {
+    font-family: "InterDisplay";
+    src: url("./fonts/InterDisplay-ExtraBold.ttf") format("truetype");
+    font-weight: 800;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "InterDisplay";
+    src: url("./fonts/InterDisplay-ExtraBoldItalic.ttf") format("truetype");
+    font-weight: 800;
+    font-style: italic;
+}
+
+/* Black */
+@font-face {
+    font-family: "InterDisplay";
+    src: url("./fonts/InterDisplay-Black.ttf") format("truetype");
+    font-weight: 900;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "InterDisplay";
+    src: url("./fonts/InterDisplay-BlackItalic.ttf") format("truetype");
+    font-weight: 900;
+    font-style: italic;
+}
+
+:root {
+    [data-content-type=heading][data-level="3"] {
+        --level: 20px;
+    }
+
+    [data-content-type=heading][data-level="2"] {
+        --level: 24px;
+    }
+
+    [data-content-type=heading][data-level="1"] {
+        --level: 21px;
+    }
+
+    [data-content-type=heading] {
+        --level: 40px;
+    }
+}
+
+.views {
+    container-name: views;
+    container-type: inline-size;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    height: 100%;
+    padding: 8px;
+}
+
+.view-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: calc(50% - 4px);
+    width: 100%;
+}
+
+@container views (width > 1024px) {
+    .view-wrapper {
+        height: 100%;
+        width: calc(50% - 4px);
+    }
+}
+
+.view-label {
+    color: #0090ff;
+    display: flex;
+    font-size: 12px;
+    font-weight: bold;
+    justify-content: space-between;
+    margin-inline: 16px;
+}
+
+.view {
+    border: solid #0090ff 1px;
+    border-radius: 16px;
+    flex: 1;
+    height: 0;
+    padding: 8px;
+}
+
+.view .bn-container {
+    height: 100%;
+    margin: 0;
+    max-width: none;
+    padding: 0;
+}
+
+.view .bn-editor {
+    height: 100%;
+    overflow: auto;
+}
+
+.view textarea {
+    background-color: #0090ff20;
+    border: none;
+    border-radius: 8px;
+    flex: 1;
+    height: 100%;
+    margin: 0;
+    overflow: auto;
+    padding: 8px;
+    resize: none;
+    white-space: pre-wrap;
+    width: 100%;
+}
+
+.bw-emoji {
+    svg {
+        width: 16px;
+        height: 16px;
+        fill: #7c3aed !important;
+        stroke: #7c3aed !important;
+    }
+}
+
+.enter-symbol {
+    opacity: 0;
+    transition: all 120ms ease;
+}
+
+.menu-item:hover .enter-symbol {
+    opacity: 1;
+    transform: translateX(4px);
+}
+
+.enter-symbol svg {
+    width: 16px;
+    height: 16px;
+    stroke: gray !important;
+}
+
+.bw-emoji:hover {
+    filter: none;
+}
+
+.bw-text {
+    margin-left: 8px;
+    width: 100%;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    /* font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; */
+    font-family: "InterDisplay", sans-serif;
+}
+
+
+:root {
+    --pal-purple: #7c51d1;
+    --pal-green: #3b8a5e;
+    --pal-blue: #2b6cb0;
+    --bg: #ffffff;
+    --bg-hover: rgba(0, 0, 0, 0.04);
+    --text: #1a1a1a;
+    --text-sec: #72716e;
+    --border: rgba(0, 0, 0, 0.09);
+    --shadow: 0 4px 24px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.menu-wrapper {
+    background: var(--bg);
+    width: 300px;
+    height: 100%;
+}
+
+.h-auto {
+    height: auto;
+}
+
+.menu-section {
+    padding: 4px 0;
+}
+
+.menu-section+.menu-section {
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+    padding-top: 4px;
+}
+
+.section-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-sec);
+    padding: 6px 12px 4px;
+    letter-spacing: 0.02em;
+    user-select: none;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text);
+    transition: background 80ms ease;
+    user-select: none;
+    min-height: 30px;
+    position: relative;
+}
+
+.menu-item:hover,
+.menu-item.active {
+    background: var(--bg-hover);
+}
+
+.menu-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.menu-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+}
+
+.menu-label-suffix {
+    color: var(--text-sec);
+    font-weight: 500;
+}
+
+.menu-chevron {
+    display: flex;
+    align-items: center;
+    color: var(--text-sec);
+    flex-shrink: 0;
+}
+
+.submenu {
+    background: var(--bg);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    padding: 4px;
+    min-width: 160px;
+    z-index: 9999;
+    margin-left: -4px;
+}
+
+.submenu-item {
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    color: var(--text);
+    cursor: pointer;
+    transition: background 80ms;
+    user-select: none;
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+}
+
+.submenu-item:hover {
+    background: var(--bg-hover);
+}
+
+.ai-menu-wrapper {
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+/* Chrome, Edge, Safari */
+.ai-menu-wrapper::-webkit-scrollbar {
+    width: 6px;
+}
+
+.ai-menu-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ai-menu-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.08);
+    /* nhạt hơn */
+    border-radius: 6px;
+}
+
+.ai-menu-wrapper::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.14);
+}
+
+/* Firefox */
+.ai-menu-wrapper {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.08) transparent;
+}
+
+.mantine-InputWrapper-root {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    margin: auto 0;
+    width: 100%;
+}
+
+.mantine-Input-input {
+    border: none;
+    height: 30px;
+}
+
+.mantine-Input-wrapper {
+    width: 100%;
+}
+
+.menu-item {
+    justify-content: flex-start;
+}
+
+.menu-label {
+    flex: 1;
+}
+
+.input-wrapper {
+    position: relative;
+}
+
+.textarea {
+    position: relative;
+    background: transparent;
+}
+
+.fake-placeholder {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #888;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+
+.loading-dots {
+    overflow: visible;
+}
+
+.dot {
+    animation: wave 1.2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.red {
+    fill: #ff4d4f;
+    animation-delay: 0s;
+}
+
+.blue {
+    fill: #1890ff;
+    animation-delay: 0.2s;
+}
+
+.green {
+    fill: #52c41a;
+    animation-delay: 0.4s;
+}
+
+@keyframes wave {
+
+    0%,
+    60%,
+    100% {
+        transform: translateY(0);
+        opacity: 0.6;
+    }
+
+    30% {
+        transform: translateY(-6px);
+        opacity: 1;
+    }
+}
+
+/* override tooltip */
+.mantine-Tooltip-tooltip {
+    background-color: #202123 !important;
+    color: #ffffff !important;
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-weight: 500;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    z-index: 10005;
+}
+
+/* override arrow */
+.mantine-Tooltip-arrow {
+    background-color: #202123 !important;
+    z-index: 10005;
+}
+
+.mantine-Tooltip-root {
+    z-index: 10005 !important;
+}
+
+.mantine-Tooltip-tooltip {
+    z-index: 10005 !important;
+}
+
+.mantine-Tooltip-arrow {
+    z-index: 10005 !important;
+}

@@ -1,303 +1,262 @@
+// BlueButton.tsx  –  AI toolbar button + floating panel
+// Shared logic lives in aiUtils.js
 import "@blocknote/mantine/style.css";
+import { Tooltip } from "@mantine/core";
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import styles from "../../styles/Notion.module.scss";
-import "../../styles/blue_button.scss";
-import { TextInput, Loader } from "@mantine/core";
+import { Textarea } from "@mantine/core";
 import { useBlockNoteEditor, useComponentsContext } from "@blocknote/react";
+import "../../styles/style.css";
+import { DislikeModal } from "./DislikeModal";
+import { CancelModal } from "./cancelModal";
 import { useAIState } from "./aiState";
+import {
+    MENU_DATA, RESULT_ACTIONS, ICONS,
+    getSelectionRectFull, callAI, applyResultToBlock, ensureSelection,
+    inputLikeStyle, menuDropdownStyle, hideToolbars, RobotAvatar
+} from "./aiUtils";
+import toast from "react-hot-toast";
+// ── MenuItem ──────────────────────────────────────────────────────────────────
+function MenuItem({ item, isActive, onHover, onClick }) {
+    const ref = useRef(null);
 
-function isTextBlock(block: any): block is { id: string; content: any[] } {
-    return block && Array.isArray(block.content);
-}
-
-/** Pixel rect of the current browser text selection (the actual highlighted text). */
-function getSelectionRect(): { top: number; left: number; width: number } | null {
-    const sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) return null;
-    const rect = sel.getRangeAt(0).getBoundingClientRect();
-    if (!rect || rect.width === 0) return null;
-    return {
-        top: rect.bottom + window.scrollY + 6,
-        left: rect.left + window.scrollX,
-        width: Math.max(rect.width, 260),
-    };
-}
-
-export function BlueButton() {
-    //const BASE_URL = "http://localhost:3000/ai";
-    const BASE_URL = "https://content.kongbot.net/webhook/ai-editor";
-    // ── AI global state ──────────────────────────────────────────────────────
-    const setPending = useAIState((s) => s.setPending);
-    const openAI = useAIState((s) => s.openAI);
-    const closeAI = useAIState((s) => s.closeAI);  // hides FormattingToolbar
-
-    // ── Local state ──────────────────────────────────────────────────────────
-    const [panelPos, setPanelPos] = useState<{ top: number; left: number; width: number } | null>(null);
-    const [prompt, setPrompt] = useState("");
-    const [preview, setPreview] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [suggestion, setSuggestion] = useState<{ oldId: string; newId: string } | null>(null);
-    const [previewBlockId, setPreviewBlockId] = useState<string | null>(null);
-
-    const panelRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
-
-    const editor = useBlockNoteEditor();
-    const Components = useComponentsContext()!;
-    const [dots, setDots] = useState("");
-    useEffect(() => {
-        if (!loading) {
-            setDots("");
-            return;
+    const handleMouseEnter = () => {
+        if (item.hasSubmenu && ref.current) {
+            onHover(item.id, ref.current.getBoundingClientRect());
+        } else {
+            onHover(null, null);
         }
+    };
 
-        const interval = setInterval(() => {
-            setDots(prev => (prev.length >= 3 ? "" : prev + "."));
-        }, 500);
-
-        return () => clearInterval(interval);
-    }, [loading]);
-    const SparklesIcon = () => (
-        <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+    return (
+        <div
+            ref={ref}
+            className={`menu-item ${isActive ? "active" : ""}`}
+            onMouseEnter={handleMouseEnter}
+            onClick={item.hasSubmenu ? undefined : onClick}
         >
+            {item.icon && (
+                <span className="menu-icon" style={{ fill: item.iconColor, color: item.iconColor }}>
+                    {ICONS[item.icon]}
+                </span>
+            )}
+            <span className="menu-label">{item.label}</span>
+            {item.shortcut && <span className="menu-label-suffix">{item.shortcut}</span>}
+            {item.hasSubmenu && <span className="menu-chevron">{ICONS.chevronRight}</span>}
+        </div>
+    );
+}
+
+// ── Submenu ───────────────────────────────────────────────────────────────────
+function Submenu({ items, anchorRect, onSelect }) {
+    if (!anchorRect) return null;
+    return (
+        <div
+            className="submenu"
+            style={{ position: "fixed", top: anchorRect.top, left: anchorRect.right }}
+        >
+            {items.map((lang) => (
+                <div key={lang} className="submenu-item" onClick={() => onSelect(lang)}>
+                    {lang}
+                </div>
+            ))}
+        </div>
+    );
+}
+
+// ── Loading dots overlay ──────────────────────────────────────────────────────
+function LoadingOverlay({ loading, onClick }) {
+    if (!loading) return null;
+    return createPortal(
+        <div
+            style={{ position: "fixed", inset: 0, zIndex: 9999 }}
+            onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onClick(); }}
+        />,
+        document.body
+    );
+}
+
+// ── AI icon for toolbar ───────────────────────────────────────────────────────
+function AIIcon() {
+    return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 3l1.8 4.5L18 9l-4.2 1.5L12 15l-1.8-4.5L6 9l4.2-1.5L12 3z" />
             <path d="M5 16l.8 2L8 19l-2.2.8L5 22l-.8-2L2 19l2.2-.8L5 16z" />
         </svg>
     );
-    function AIIcon() {
-        return (
-            <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            >
-                <path d="M12 3l1.8 4.5L18 9l-4.2 1.5L12 15l-1.8-4.5L6 9l4.2-1.5L12 3z" />
-                <path d="M5 16l.8 2L8 19l-2.2.8L5 22l-.8-2L2 19l2.2-.8L5 16z" />
-            </svg>
-        );
-    }
+}
 
-    // ── Open panel ────────────────────────────────────────────────────────────
+// ── BlueButton ────────────────────────────────────────────────────────────────
+export function BlueButton() {
+    const setPending = useAIState((s) => s.setPending);
+    const openAI = useAIState((s) => s.openAI);
+    const closeAI = useAIState((s) => s.closeAI);
+
+    const [panelPos, setPanelPos] = useState(null);
+    const [prompt, setPrompt] = useState("");
+    const [preview, setPreview] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+    const [activeSubmenu, setActiveSubmenu] = useState(null);
+    const [submenuRect, setSubmenuRect] = useState(null);
+    const [submenuItems, setSubmenuItems] = useState([]);
+    const [rateAnswer, setRateAnswer] = useState(0);
+    const [rateModal, setRateModal] = useState(false);
+
+    const panelRef = useRef(null);
+    const inputRef = useRef(null);
+    const loadingRef = useRef(loading);
+
+    const editor = useBlockNoteEditor();
+    const Components = useComponentsContext();
+
+    useEffect(() => { loadingRef.current = loading; }, [loading]);
+
+    // Block keyboard while loading
+    useEffect(() => {
+        if (!loading) return;
+        const block = (e) => { e.preventDefault(); e.stopPropagation(); };
+        window.addEventListener("keydown", block, true);
+        return () => window.removeEventListener("keydown", block, true);
+    }, [loading]);
+
+    // Close on outside click
+    useEffect(() => {
+        const onDown = (e) => {
+            if (panelRef.current && !panelRef.current.contains(e.target)) {
+                loadingRef.current ? setShowCloseConfirm(true) : closePanel();
+            }
+        };
+        if (panelPos) window.addEventListener("mousedown", onDown);
+        return () => window.removeEventListener("mousedown", onDown);
+    }, [panelPos]);
+
+    // Hide toolbars
+    document.querySelectorAll<HTMLElement>(".bn-formatting-toolbar")
+        .forEach((el) => {
+            el.style.display = "none";
+        });
+
+    // ── Panel open / close ────────────────────────────────────────────────────
     function openPanel() {
-        const pos = getSelectionRect();
+        const pos = getSelectionRectFull();
         if (!pos) return;
         setPanelPos(pos);
-        closeAI();  // hide the BlockNote FormattingToolbar
+        closeAI();
         setTimeout(() => inputRef.current?.focus(), 60);
     }
 
-    // ── Close panel ───────────────────────────────────────────────────────────
     function closePanel() {
         setPanelPos(null);
         setPrompt("");
         setPreview(null);
-        openAI();   // restore toolbar
+        openAI();
     }
 
-    // ── Click-outside to close ────────────────────────────────────────────────
-    useEffect(() => {
-        function onMouseDown(e: MouseEvent) {
-            if (loading) return;
-            if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-                closePanel();
-            }
+    // ── Submenu hover handler ─────────────────────────────────────────────────
+    function handleHover(id, rect) {
+        if (!id) { setActiveSubmenu(null); setSubmenuRect(null); setSubmenuItems([]); return; }
+        const allItems = MENU_DATA.flatMap(s => s.items);
+        const item = allItems.find(i => i.id === id);
+        if (item?.hasSubmenu) {
+            setActiveSubmenu(id);
+            setSubmenuRect(rect);
+            setSubmenuItems(item.submenuItems || []);
+        } else {
+            setActiveSubmenu(null); setSubmenuRect(null); setSubmenuItems([]);
         }
-        if (panelPos) window.addEventListener("mousedown", onMouseDown);
-        return () => window.removeEventListener("mousedown", onMouseDown);
-    }, [panelPos]);
-
-    function toInline(text: string) {
-        return [
-            {
-                type: "text",
-                text,
-                styles: {},
-            },
-        ];
-    }
-    function strikeBlock(blockId: string) {
-        const b = editor.getBlock(blockId);
-        if (!b || !Array.isArray(b.content)) return;
-
-        editor.updateBlock(blockId, {
-            content: b.content.map((c: any) => ({
-                ...c,
-                styles: { ...(c.styles ?? {}), strike: true },
-            })),
-        });
     }
 
-    function unstrikeBlock() {
-        if (!previewBlockId) return;
-        const blockId = previewBlockId;
-        const b = editor.getBlock(blockId);
-        if (!b || !Array.isArray(b.content)) return;
-
-        editor.updateBlock(blockId, {
-            content: b.content.map((c: any) => ({
-                ...c,
-                styles: {},
-            })),
-        });
+    // ── AI calls ──────────────────────────────────────────────────────────────
+    async function runAI(action) {
+        ensureSelection(editor);
+        const selectedText = editor.getSelectedText();
+        if (!selectedText) return;
+        setLoading(true);
+        try {
+            const fullContent = await editor.blocksToFullHTML(editor.document);
+            const text = await callAI(action, { selectedText, fullContent });
+            setPreview(text);
+        } catch (err) {
+            console.error(err);
+            toast.error(String(err));
+        } finally {
+            setLoading(false);
+            setPending(true);
+        }
     }
 
-    function acceptPromptResult() {
-        if (!preview) return;
+    async function runAIPrompt() {
+        if (!prompt.trim()) return;
+        ensureSelection(editor);
+        const selectedText = editor.getSelectedText();
+        if (!selectedText) return;
+        setLoading(true);
+        setPrompt("");
+        try {
+            const fullContent = await editor.blocksToFullHTML(editor.document);
+            const text = await callAI("rewrite", { selectedText, fullContent, prompt });
+            setPreview(text);
+        } catch (err) {
+            console.error(err);
+            toast.error(String(err));
+        } finally {
+            setLoading(false);
+        }
+    }
 
+    // ── Accept / revert ───────────────────────────────────────────────────────
+    function acceptResult() {
         const selection = editor.getSelection();
-        if (!selection || selection.blocks.length === 0) return;
-
-        const block = selection.blocks[0]; // block đang được chọn
-
-        editor.updateBlock(block.id, {
-            content: [
-                {
-                    type: "text",
-                    text: preview.trim(),
-                    styles: {},
-                },
-            ],
-        });
-
+        if (!selection?.blocks?.length || !preview) return;
+        applyResultToBlock(editor, selection.blocks[0].id, preview);
         closePanel();
     }
 
-
-    // ── Free-form AI prompt ───────────────────────────────────────────────────
-    async function runAIPrompt() {
-        const selected_text = editor.getSelectedText();
-        if (!selected_text) return;
-        const full_content = await editor.blocksToFullHTML(editor.document);
-
-        if (!prompt.trim()) return;
-        setLoading(true);
-        const res = await fetch(BASE_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "rewrite", selected_text, full_content, language: "vi" }),
-        });
-        const data = await res.json();
-        setPreview(data.text ?? null);
-        const selection = editor.getSelection();
-        const block = selection?.blocks?.[0];
-        if (!block || !isTextBlock(block)) return;
-        // strikeBlock(block.id);
-        // setPreviewBlockId(block.id);
-        setLoading(false);
-    }
-
-    // ── Contextual actions (rewrite / improve / shorten / expand) ────────────
-    async function runAI(action: string) {
-        const selected_text = editor.getSelectedText();
-        if (!selected_text) return;
-        setLoading(true);
-
-        const full_content = await editor.blocksToFullHTML(editor.document);
-        const res = await fetch(BASE_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action, selected_text, full_content, language: "vi" }),
-        });
-        const data = await res.json();
-        if (!data?.text) return;
-
-        const selection = editor.getSelection();
-        if (!selection?.blocks?.length) return;
-        const oldBlock = selection.blocks[0];
-        if (!isTextBlock(oldBlock)) return;
-
-        // // // Strike original
-        // editor.updateBlock(oldBlock.id, {
-        //     content: oldBlock.content.map((c: any) => ({
-        //         ...c, styles: { ...(c.styles ?? {}), strike: true },
-        //     })),
-        // });
-
-        // const [newBlock] = editor.insertBlocks(
-        //     [{ type: "paragraph", content: data.text.trim() }],
-        //     oldBlock.id,
-        //     "after"
-        // );
-
-        // setSuggestion({ oldId: oldBlock.id, newId: newBlock.id });
-        // openAI();
-        // setPending(true);
-        // closePanel(); // panel gone, toolbar comes back with ✅ ↩️
-        setPreview(data.text ?? null);
-        // setPreviewBlockId(oldBlock.id);
-        // strikeBlock(oldBlock.id);
-        setLoading(false);
-    }
-
-    // ── Accept / revert rewrite ───────────────────────────────────────────────
-    function acceptRewrite() {
-        if (!suggestion) return;
-        editor.removeBlocks([suggestion.oldId]);
-        setSuggestion(null);
-        setPending(false);
-    }
-
     function revertAI() {
-        if (!suggestion) return;
-        editor.removeBlocks([suggestion.newId]);
-        const oldBlock = editor.getBlock(suggestion.oldId);
-        if (oldBlock && Array.isArray(oldBlock.content)) {
-            editor.updateBlock(oldBlock.id, {
-                content: oldBlock.content.map((c: any) => ({
-                    ...c, styles: { ...(c.styles ?? {}), strike: false },
-                })),
-            });
-        }
-        setSuggestion(null);
         setPending(false);
+        setLoading(false);
+        closePanel();
     }
+
+    // ── Result action dispatcher ──────────────────────────────────────────────
+    function handleResultAction(action) {
+        switch (action) {
+            case "accept": acceptResult(); break;
+            case "close": revertAI(); break;
+            case "insert": acceptResult(); break;   // can differentiate later
+            case "retry": runAI("rewrite"); break;
+            default: break;
+        }
+    }
+    hideToolbars();
+    useEffect(() => {
+        if (loading) {
+            //, document.body.style.overflow = "hidden";
+
+            const blockKeys = (e: KeyboardEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+            };
+
+            window.addEventListener("keydown", blockKeys, true);
+
+            return () => {
+                //, document.body.style.overflow = "";
+                window.removeEventListener("keydown", blockKeys, true);
+            };
+        }
+    }, [loading]);
+    const isActive = prompt.trim().length > 0 && !loading;
 
     // ── Render ────────────────────────────────────────────────────────────────
     return (
         <>
-            {/* Toolbar button */}
-            <Components.FormattingToolbar.Button
-                mainTooltip="Chat với AI"
-                onClick={openPanel}
-            >
+            <Components.FormattingToolbar.Button mainTooltip="Chat với AI" onClick={openPanel}>
                 <AIIcon />
             </Components.FormattingToolbar.Button>
 
-            {/* Accept / Revert shown in toolbar while suggestion is pending */}
-            {suggestion && (
-                <>
-                    <Components.FormattingToolbar.Button
-                        mainTooltip="Chấp nhận thay đổi"
-                        className={styles.notionButton}
-                        onClick={acceptRewrite}
-                    >
-                        ✅
-                    </Components.FormattingToolbar.Button>
-                    <Components.FormattingToolbar.Button
-                        mainTooltip="Hoàn tác"
-                        className={styles.notionButton}
-                        onClick={revertAI}
-                    >
-                        ↩️
-                    </Components.FormattingToolbar.Button>
-                </>
-            )}
-
-            {/* Floating panel — Portal to document.body, anchored below selected text */}
             {panelPos && createPortal(
                 <div
                     ref={panelRef}
@@ -305,148 +264,256 @@ export function BlueButton() {
                     style={{
                         position: "absolute",
                         top: panelPos.top,
-                        // left: panelPos.left,
-                        left: "16px",
-                        width: panelPos.width,
-                        minWidth: 260,
-                        background: "#ffffff",
-                        border: "1px solid #e3e3e1",
-                        borderRadius: 8,
-                        boxShadow: "0 8px 28px rgba(0,0,0,0.13)",
-                        zIndex: 101
+                        left: panelPos.left,
+                        minWidth: 280,
+                        background: "transparent",
+                        zIndex: 10003,
                     }}
                 >
-                    {/* Input + preview */}
-                    <div style={{ borderBottom: "1px solid #f0f0ee" }}>
-                        <TextInput
-                            ref={inputRef}
-                            placeholder={
-                                loading
-                                    ? `Đang suy nghĩ${dots}`
-                                    : "Ask AI to write anything…"
-                            } value={prompt}
-                            onChange={(e) => setPrompt(e.currentTarget.value)}
-                            onKeyDown={(e) => {
-                                e.stopPropagation();
-                                if (e.key === "Enter") runAIPrompt();
-                                if (e.key === "Escape") closePanel();
-                            }}
-                            rightSection={loading ? <Loader size="xs" /> : null}
-                            size="xs"
-                            styles={{
-                                input: {
-                                    color: "#6c6c6bff",
-                                    fontSize: 14,
-                                    height: 46,
-                                    minHeight: 30,
-                                    border: "1px solid #e3e3e1",
-                                    borderRadius: 5,
-                                    zIndex: 102,
-                                    width: "calc(100vw - 54px)",
-                                    boxShadow: "0 8px 28px rgba(0,0,0,0.13)",
-                                    background: "white",
-                                },
-                            }}
-                        />
+                    {/* ── Input card ──────────────────────────────────────── */}
+                    <div style={{
+                        ...inputLikeStyle,
+                        display: "flex", flexDirection: "column",
+                        width: panelPos.width, gap: 2,
+                        paddingTop: 2, paddingBottom: 2, paddingInline: 12,
+                    }}>
+                        {/* Avatar */}
+                        <div style={{ position: "absolute", top: 8, insetInlineStart: -40 }}>
+                            <div style={{
+                                width: 28, height: 28, borderRadius: 100, background: "#fff",
+                                boxShadow: "0px 14px 27px -6px #0000001a, 0px 2px 4px -1px #0000000f, 0 0 0 1px #54483114",
+                                overflow: "hidden",
+                            }}>
+                                {/* bot face SVG (unchanged) */}
+                                <RobotAvatar />
+                            </div>
+                        </div>
 
+                        {/* Preview text */}
                         {preview && (
-                            <div style={{ marginTop: 6 }}>
-                                <div style={{
-                                    padding: "6px 8px",
-                                    background: "#f0f0ee",
-                                    borderRadius: 5,
-                                    fontSize: 12,
-                                    whiteSpace: "pre-wrap",
-                                    maxHeight: 120,
-                                    overflowY: "auto",
-                                    color: "#37352f",
-                                }}>
+                            <div style={{
+                                color: "#000", whiteSpace: "pre-wrap", fontSize: 14,
+                                borderRadius: 12, fontWeight: 500,
+                                marginTop: 8, marginInline: 4,
+                            }}>
+                                <div style={{ whiteSpace: "break-spaces", wordBreak: "break-word", paddingBlock: 3, paddingInline: 2 }}>
                                     {preview}
                                 </div>
-                                <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
-                                    <button
-                                        onMouseDown={(e) => { e.stopPropagation(); acceptPromptResult(); }}
-                                        style={btnStyle("#37352f", "#fff")}
-                                    ><span className="bw-emoji">✅</span>
-                                        Insert</button>
-                                    <button
-                                        onMouseDown={(e) => { e.stopPropagation(); setPreview(null); setPrompt(""); }}
-                                        style={btnStyle("#ebebea", "#37352f")}
-                                    ><span className="bw-emoji">❌</span>
-                                        Discard</button>
+                            </div>
+                        )}
+
+                        {/* Input row */}
+                        <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+                            <div className="input-wrapper">
+                                {loading && (
+                                    <div className="fake-placeholder">
+                                        Đang suy nghĩ
+                                        <svg className="loading-dots" width="32" height="24" viewBox="0 0 32 24" fill="none">
+                                            <circle className="dot red" cx="6" cy="12" r="3" />
+                                            <circle className="dot blue" cx="16" cy="12" r="3" />
+                                            <circle className="dot green" cx="26" cy="12" r="3" />
+                                        </svg>
+                                    </div>
+                                )}
+                                <Textarea
+                                    disabled={loading}
+                                    className="textarea"
+                                    ref={inputRef}
+                                    placeholder={loading ? "" : "Hỏi AI bất kỳ điều gì..."}
+                                    autosize
+                                    value={prompt}
+                                    onChange={(e) => {
+                                        setPrompt(e.currentTarget.value);
+                                        e.currentTarget.style.height = "auto";
+                                        e.currentTarget.style.height = e.currentTarget.scrollHeight + "px";
+                                    }}
+                                    onKeyDown={(e) => {
+                                        e.stopPropagation();
+                                        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); runAIPrompt(); }
+                                        if (e.key === "Escape") closePanel();
+                                    }}
+                                    style={{
+                                        color: "#6c6c6b", width: "100%", whiteSpace: "pre-wrap",
+                                        wordBreak: "break-word", maxHeight: 240, overflowY: "auto",
+                                        resize: "none", paddingTop: 8, paddingBottom: 0,
+                                        marginLeft: -10, border: "none", fontSize: 12, minHeight: 30,
+                                    }}
+                                />
+                            </div>
+
+                            {/* Bottom bar */}
+                            <div style={{
+                                display: "flex", justifyContent: "space-between",
+                                width: "100%", flex: 1, paddingTop: 2, paddingBottom: 5, marginTop: -1,
+                            }}>
+                                {/* Left – context source */}
+                                <div style={{ display: "flex", flexDirection: "row" }}>
+                                    <Tooltip label="Viết dựa trên kiến thức trong...">
+                                        <div role="button" style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer", fontSize: 12, fontWeight: 500, color: "#72716e" }}>
+                                            <span style={{ fontSize: 16 }}>👋</span>
+                                            <span>Trang hiện tại</span>
+                                            <svg viewBox="3.06 0 9.88 16" style={{ width: "auto", height: 16, fill: "#72716e" }}>
+                                                <path d="m12.76 6.52-4.32 4.32a.62.62 0 0 1-.44.18.62.62 0 0 1-.44-.18L3.24 6.52a.63.63 0 0 1 0-.88c.24-.24.64-.24.88 0L8 9.52l3.88-3.88c.24-.24.64-.24.88 0s.24.64 0 .88" />
+                                            </svg>
+                                        </div>
+                                    </Tooltip>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 0, justifyContent: "center" }}>
+                                        <Tooltip label="Đề cập đến một người, trang hoặc ngày">
+
+                                            <div role="button" tabIndex={0}
+                                                aria-label="Nhắc đến một người, trang hoặc ngày"
+                                                style={{
+                                                    userSelect: "none",
+                                                    transition: "background 20ms ease-in",
+                                                    cursor: "pointer",
+                                                    display: "inline-flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    gap: 0,
+                                                    height: 20,
+                                                    paddingInline: 0,
+                                                    borderRadius: 6,
+                                                    whiteSpace: "nowrap",
+                                                    fontSize: 14,
+                                                    fontWeight: 500,
+                                                    lineHeight: 1.2,
+                                                    width: 20,
+                                                    color: "var(--c-texPri)",
+                                                    flexShrink: 0,
+                                                    marginInline: 0,
+                                                    marginLeft: "3px",
+                                                }}>
+                                                <svg aria-hidden="true"
+                                                    role="graphics-symbol"
+                                                    viewBox="0 0 20 20" className="at"
+                                                    style={{
+                                                        width: 20,
+                                                        height: 20,
+                                                        display: "block",
+                                                        fill: "var(--c-icoSec)",
+                                                        flexShrink: 0,
+                                                    }}>
+                                                    <path
+                                                        d="M14.754 4.125a7.625 7.625 0 1 0-2.052 12.964.625.625 0 0 0-.46-1.162 6.376 6.376 0 1 1 3.672-3.83c-.159.457-.654.778-1.278.778a1.28 1.28 0 0 1-1.28-1.28V7.079a.625.625 0 0 0-1.25 0v.214c-.654-.555-1.496-.839-2.383-.839-.969 0-1.878.338-2.546 1-.672.665-1.058 1.614-1.058 2.751s.385 2.098 1.05 2.778c.665.679 1.575 1.04 2.554 1.04s1.893-.36 2.563-1.037q.075-.074.143-.153a2.53 2.53 0 0 0 2.207 1.292c1.01 0 2.081-.533 2.459-1.618a7.625 7.625 0 0 0-2.341-8.382m-7.385 6.08c0-.846.28-1.46.687-1.862.41-.406.99-.639 1.667-.639s1.266.234 1.683.641c.412.404.697 1.018.697 1.86 0 .844-.286 1.478-.704 1.9-.421.425-1.01.669-1.676.669-.667 0-1.247-.243-1.66-.666-.412-.42-.694-1.056-.694-1.903">
+                                                    </path>
+                                                </svg>
+                                            </div>
+                                        </Tooltip>
+                                    </div>
                                 </div>
+
+                                {/* Right – like / dislike / send */}
+                                <div style={{ display: "flex", alignItems: "center", gap: 2, alignSelf: "flex-end" }}>
+                                    <Tooltip label="Hữu ích">
+                                        <div role="button" onClick={() => setRateAnswer(1)} style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: 6 }}>
+                                            <svg viewBox="0 0 16 16" style={{ width: 16, height: 16, fill: rateAnswer === 1 ? "blue" : "white", stroke: rateAnswer === 1 ? "white" : "gray" }}>
+                                                <path d="M8.45 12.75a3.66 3.66 0 0 1-1.643-.387v-.008l-1.132-.387h-.097v-6.15l1.399-1.492c.233-.298.458-.745.672-1.172.143-.283.28-.557.413-.773l.287-.589a1.024 1.024 0 0 1 1.232-.418c.496.193.76.728.612 1.24l-.403 1.41c-.079.272-.192.5-.305.73-.11.22-.22.441-.3.704a.32.32 0 0 0 .31.41h3.256a.97.97 0 0 1 .969.97c0 .333-.179.62-.442.79a.94.94 0 0 1 .534.852.955.955 0 0 1-.65.907.96.96 0 0 1 .364.744.96.96 0 0 1-.961.969.97.97 0 0 1-.69 1.65zM4.61 6.334H2.913a.727.727 0 0 0-.727.726v4.181c0 .402.326.727.727.727H4.61z" />
+                                            </svg>
+                                        </div>
+                                    </Tooltip>
+
+                                    <Tooltip label="Không hữu ích">
+                                        <div role="button" onClick={() => { setRateAnswer(2); setRateModal(true); }} style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: 6, transform: "rotate(180deg)" }}>
+                                            <svg viewBox="0 0 16 16" style={{ width: 16, height: 16, fill: rateAnswer === 2 ? "blue" : "white", stroke: rateAnswer === 2 ? "white" : "gray" }}>
+                                                <path d="M8.45 12.75a3.66 3.66 0 0 1-1.643-.387v-.008l-1.132-.387h-.097v-6.15l1.399-1.492c.233-.298.458-.745.672-1.172.143-.283.28-.557.413-.773l.287-.589a1.024 1.024 0 0 1 1.232-.418c.496.193.76.728.612 1.24l-.403 1.41c-.079.272-.192.5-.305.73-.11.22-.22.441-.3.704a.32.32 0 0 0 .31.41h3.256a.97.97 0 0 1 .969.97c0 .333-.179.62-.442.79a.94.94 0 0 1 .534.852.955.955 0 0 1-.65.907.96.96 0 0 1 .364.744.96.96 0 0 1-.961.969.97.97 0 0 1-.69 1.65zM4.61 6.334H2.913a.727.727 0 0 0-.727.726v4.181c0 .402.326.727.727.727H4.61z" />
+                                            </svg>
+                                        </div>
+                                    </Tooltip>
+                                    {rateModal && <DislikeModal onClose={() => setRateModal(false)} />}
+
+                                    <Tooltip label="Gửi">
+                                        <div
+                                            role="button"
+                                            onClick={() => { if (!isActive) return; runAIPrompt(); }}
+                                            style={{
+                                                cursor: isActive ? "pointer" : "default",
+                                                opacity: isActive ? 1 : 0.4,
+                                                background: isActive ? "var(--c-bgAccent)" : "transparent",
+                                                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                                height: 24, width: 24, borderRadius: 100,
+                                                pointerEvents: isActive ? "auto" : "none",
+                                            }}
+                                        >
+                                            <svg viewBox="0 0 20 20" style={{ width: 24, height: 24, fill: isActive ? "blue" : "" }}>
+                                                <path d="M10 17.625a7.625 7.625 0 1 0 0-15.25 7.625 7.625 0 0 0 0 15.25m3.042-8.07a.625.625 0 0 1-.884 0L10.625 8.02v5.466a.625.625 0 1 1-1.25 0V8.021L7.842 9.554a.625.625 0 1 1-.884-.883l2.6-2.6a.625.625 0 0 1 .884 0l2.6 2.6a.625.625 0 0 1 0 .883" />
+                                            </svg>
+                                        </div>
+                                    </Tooltip>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ── Command / Result dropdown ────────────────────────── */}
+                    <div className="ai-menu-wrapper" style={menuDropdownStyle}>
+                        {!loading && !preview && (
+                            <>
+                                <div className="menu-wrapper">
+                                    {MENU_DATA.map((section) => (
+                                        <div key={section.section} className="menu-section">
+                                            <div className="section-label">{section.section}</div>
+                                            {section.items.map((item) => (
+                                                <MenuItem
+                                                    key={item.id}
+                                                    item={item}
+                                                    isActive={activeSubmenu === item.id}
+                                                    onHover={handleHover}
+                                                    onClick={() => runAI(item.action)}
+                                                />
+                                            ))}
+                                        </div>
+                                    ))}
+                                </div>
+                                {activeSubmenu && submenuRect && (
+                                    <Submenu
+                                        items={submenuItems}
+                                        anchorRect={submenuRect}
+                                        onSelect={() => runAI("rewrite")}
+                                    />
+                                )}
+                            </>
+                        )}
+
+                        {!loading && preview && (
+                            <div className="menu-wrapper h-auto">
+                                <div className="menu-section">
+                                    {RESULT_ACTIONS.map((item) => (
+                                        <MenuItem
+                                            key={item.id}
+                                            item={item}
+                                            isActive={false}
+                                            onHover={() => { }}
+                                            onClick={() => handleResultAction(item.action)}
+                                        />
+                                    ))}
+                                </div>
+                                <MenuItem
+                                    item={{
+                                        id: "upgrade",
+                                        label: <><span style={{ color: "#2b7fff" }}>Nâng cấp</span> lên PRO AI</>,
+                                        icon: "upgrade",
+                                        iconColor: "#2b7fff",
+                                    }}
+                                    isActive={false}
+                                    onHover={() => { }}
+                                    onClick={() => alert("Cập nhật lên PRO AI để sử dụng tính năng này")}
+                                />
                             </div>
                         )}
                     </div>
 
-                    {/* Command list */}
-                    <div style={{ padding: "4px 0" }}>
-                        {COMMANDS.map(({ label, action }) => (
-                            <button
-                                key={action}
-                                onMouseDown={(e) => { e.stopPropagation(); runAI(action); }}
-                                style={commandStyle}
-                                onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f1ef")}
-                                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                            >
-                                {label}
-                            </button>
-                        ))}
-                    </div>
+                    {/* Overlays */}
+                    <LoadingOverlay loading={loading} onClick={() => setShowCloseConfirm(true)} />
+                    {showCloseConfirm && (
+                        <CancelModal
+                            keep={acceptResult}
+                            notKeep={revertAI}
+                            onClose={() => setShowCloseConfirm(false)}
+                        />
+                    )}
                 </div>,
                 document.body
             )}
         </>
     );
 }
-
-const COMMANDS = [
-    {
-        label: (
-            <>
-                <span className="bw-emoji">✍️</span> Viết lại
-            </>
-        ),
-        action: "rewrite",
-    },
-    {
-        label: (
-            <>
-                <span className="bw-emoji">✨</span> Cải thiện văn phong
-            </>
-        ),
-        action: "improve",
-    },
-    {
-        label: (
-            <>
-                <span className="bw-emoji">✂️</span> Rút gọn
-            </>
-        ),
-        action: "shorten",
-    },
-    {
-        label: (
-            <>
-                <span className="bw-emoji">➕</span> Mở rộng
-            </>
-        ),
-        action: "expand",
-    },
-];
-
-
-const btnStyle = (bg: string, color: string): React.CSSProperties => ({
-    flex: 1, padding: "3px 0", fontSize: 11,
-    background: bg, color, border: "none",
-    borderRadius: 4, cursor: "pointer", fontFamily: "inherit",
-});
-
-const commandStyle: React.CSSProperties = {
-    display: "block", width: "100%",
-    padding: "6px 12px", textAlign: "left",
-    fontSize: 14, background: "transparent",
-    color: "#37352f", border: "none",
-    cursor: "pointer", fontFamily: "ui-sans-serif",
-    transition: "background 0.1s",
-};
