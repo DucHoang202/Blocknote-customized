@@ -4,8 +4,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── API ───────────────────────────────────────────────────────────────────────
-export const BASE_URL = "http://localhost:3000/ai";
-//export const BASE_URL = "https://content.kongbot.net/webhook/ai-editor";
+//export const BASE_URL = "http://localhost:3000/ai";
+export const BASE_URL = "https://content.kongbot.net/webhook/ai-editor";
 
 // ── AI icon for toolbar ───────────────────────────────────────────────────────
 export function RobotAvatar() {
